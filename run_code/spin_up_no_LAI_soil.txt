@@ -1,0 +1,361 @@
+
+for grid in 1 2 3 4;
+do
+for type in "topunit";
+do 
+export domainPath=/global/u2/d/daleihao/model/data/TOP_PFT/surface_data_no_LAI_variation/${type}/
+export domainFile=domain_Topunit_grid_${grid}_c210326.nc
+export surfdataFile=surfdata_Topunit_grid_${grid}_c210326.nc
+export topdataFile=topodata_Topunit_grid_${grid}_c210326.nc
+
+# notop
+export RES=CLM_USRDAT
+export COMPSET=ICLM45 
+export COMPILER=intel 
+export MACH=cori-knl 
+export CASE_NAME=no_LAI_spinup_${type}_grid${grid}_${RES}.${COMPSET}.${COMPILER}
+cd ~/model/e3sm_top/cime/scripts 
+./create_newcase -compset ICLM45 -res ${RES} -case ${CASE_NAME} -compiler ${COMPILER} -mach ${MACH} -project m3520 
+cd ${CASE_NAME}
+./xmlchange LND_DOMAIN_FILE=${domainFile} 
+./xmlchange ATM_DOMAIN_FILE=${domainFile} 
+./xmlchange LND_DOMAIN_PATH=${domainPath}
+./xmlchange ATM_DOMAIN_PATH=${domainPath}
+
+./xmlchange NTASKS=11,STOP_N=10,STOP_OPTION=nyears,JOB_WALLCLOCK_TIME="02:00:00",RUN_STARTDATE="1980-01-01",REST_N=1,REST_OPTION=nyears,RESUBMIT=1
+./xmlchange DATM_MODE="CLMGSWP3v1",DATM_CLMNCEP_YR_START='1980',DATM_CLMNCEP_YR_END='2010'
+
+
+cat >> user_nl_clm << EOF
+hist_empty_htapes = .true.
+hist_fincl1 = 'COSZEN', 'ALBD', 'ALBI','FSA','FSR','FSDSND','FSDSNI','FSRND','FSRNI','FSDSVD','FSDSVI','FSRVD','FSRVI','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA'
+hist_nhtfrq = 0
+hist_mfilt  = 12
+fsurdat = '${domainPath}${surfdataFile}'
+rad_3d_topo = .false.
+f3dtopo = ''
+EOF
+
+cat >> user_nl_datm << EOF
+ mapalgo = "nn", "nn", "nn", "nn", "nn"
+EOF
+./case.setup 
+
+# change forcing data
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.Solar  user_datm.streams.txt.CLMGSWP3v1.Solar
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.Solar
+old="/Solar"
+new="/Solar3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.Solar
+
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.TPQW  user_datm.streams.txt.CLMGSWP3v1.TPQW
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.TPQW
+old="/TPHWL"
+new="/TPHWL3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.TPQW
+
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.Precip  user_datm.streams.txt.CLMGSWP3v1.Precip
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.Precip
+old="/Precip"
+new="/Precip3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.Precip
+
+
+./case.build 
+./case.submit
+
+done;
+done;
+
+
+## 1km
+
+
+for grid in 1 2 3 4;
+do
+for type in "1km";
+do 
+export domainPath=/global/u2/d/daleihao/model/data/TOP_PFT/surface_data_no_LAI_variation/${type}/
+export domainFile=domain_grid${grid}_1km_c210326.nc
+export surfdataFile=surfdata_grid${grid}_1km_c210326.nc
+export topdataFile=topodata_grid${grid}_1km_c210326.nc
+
+# notop 
+export RES=CLM_USRDAT
+export COMPSET=ICLM45 
+export COMPILER=intel 
+export MACH=cori-knl 
+export CASE_NAME=no_LAI_spinup_${type}_grid${grid}_${RES}.${COMPSET}.${COMPILER}
+cd ~/model/e3sm_top/cime/scripts 
+./create_newcase -compset ICLM45 -res ${RES} -case ${CASE_NAME} -compiler ${COMPILER} -mach ${MACH} -project m3520 
+cd ${CASE_NAME}
+./xmlchange LND_DOMAIN_FILE=${domainFile} 
+./xmlchange ATM_DOMAIN_FILE=${domainFile} 
+./xmlchange LND_DOMAIN_PATH=${domainPath}
+./xmlchange ATM_DOMAIN_PATH=${domainPath}
+
+./xmlchange NTASKS=128,STOP_N=10,STOP_OPTION=nyears,JOB_WALLCLOCK_TIME="15:00:00",RUN_STARTDATE="1980-01-01",REST_N=1,REST_OPTION=nyears,RESUBMIT=1
+./xmlchange DATM_MODE="CLMGSWP3v1",DATM_CLMNCEP_YR_START='1980',DATM_CLMNCEP_YR_END='2010'
+
+cat >> user_nl_clm << EOF
+hist_empty_htapes = .true.
+hist_fincl1 = 'COSZEN', 'ALBD', 'ALBI','FSA','FSR','FSDSND','FSDSNI','FSRND','FSRNI','FSDSVD','FSDSVI','FSRVD','FSRVI','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA'
+hist_nhtfrq = 0
+hist_mfilt  = 12
+fsurdat = '${domainPath}${surfdataFile}'
+rad_3d_topo = .false.
+f3dtopo = ''
+EOF
+
+cat >> user_nl_datm << EOF
+ mapalgo = "nn", "nn", "nn", "nn", "nn"
+EOF
+
+./case.setup 
+
+# change forcing data
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.Solar  user_datm.streams.txt.CLMGSWP3v1.Solar
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.Solar
+old="/Solar"
+new="/Solar3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.Solar
+
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.TPQW  user_datm.streams.txt.CLMGSWP3v1.TPQW
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.TPQW
+old="/TPHWL"
+new="/TPHWL3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.TPQW
+
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.Precip  user_datm.streams.txt.CLMGSWP3v1.Precip
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.Precip
+old="/Precip"
+new="/Precip3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.Precip
+
+
+./case.build 
+./case.submit
+
+
+done;
+done;
+
+
+
+
+#### no soil
+
+
+for grid in 1 2 3 4;
+do
+for type in "topunit";
+do 
+export domainPath=/global/u2/d/daleihao/model/data/TOP_PFT/surface_data_no_soil_variation/${type}/
+export domainFile=domain_Topunit_grid_${grid}_c210326.nc
+export surfdataFile=surfdata_Topunit_grid_${grid}_c210326.nc
+export topdataFile=topodata_Topunit_grid_${grid}_c210326.nc
+
+# notop
+export RES=CLM_USRDAT
+export COMPSET=ICLM45 
+export COMPILER=intel 
+export MACH=cori-knl 
+export CASE_NAME=no_soil_spinup_${type}_grid${grid}_${RES}.${COMPSET}.${COMPILER}
+cd ~/model/e3sm_top/cime/scripts 
+./create_newcase -compset ICLM45 -res ${RES} -case ${CASE_NAME} -compiler ${COMPILER} -mach ${MACH} -project m3520 
+cd ${CASE_NAME}
+./xmlchange LND_DOMAIN_FILE=${domainFile} 
+./xmlchange ATM_DOMAIN_FILE=${domainFile} 
+./xmlchange LND_DOMAIN_PATH=${domainPath}
+./xmlchange ATM_DOMAIN_PATH=${domainPath}
+
+./xmlchange NTASKS=11,STOP_N=10,STOP_OPTION=nyears,JOB_WALLCLOCK_TIME="02:00:00",RUN_STARTDATE="1980-01-01",REST_N=1,REST_OPTION=nyears,RESUBMIT=1
+./xmlchange DATM_MODE="CLMGSWP3v1",DATM_CLMNCEP_YR_START='1980',DATM_CLMNCEP_YR_END='2010'
+
+
+cat >> user_nl_clm << EOF
+hist_empty_htapes = .true.
+hist_fincl1 = 'COSZEN', 'ALBD', 'ALBI','FSA','FSR','FSDSND','FSDSNI','FSRND','FSRNI','FSDSVD','FSDSVI','FSRVD','FSRVI','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA'
+hist_nhtfrq = 0
+hist_mfilt  = 12
+fsurdat = '${domainPath}${surfdataFile}'
+rad_3d_topo = .false.
+f3dtopo = ''
+EOF
+
+cat >> user_nl_datm << EOF
+ mapalgo = "nn", "nn", "nn", "nn", "nn"
+EOF
+./case.setup 
+
+# change forcing data
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.Solar  user_datm.streams.txt.CLMGSWP3v1.Solar
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.Solar
+old="/Solar"
+new="/Solar3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.Solar
+
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.TPQW  user_datm.streams.txt.CLMGSWP3v1.TPQW
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.TPQW
+old="/TPHWL"
+new="/TPHWL3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.TPQW
+
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.Precip  user_datm.streams.txt.CLMGSWP3v1.Precip
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.Precip
+old="/Precip"
+new="/Precip3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.Precip
+
+
+./case.build 
+./case.submit
+
+done;
+done;
+
+
+## 1km
+
+
+for grid in 1 2 3 4;
+do
+for type in "1km";
+do 
+export domainPath=/global/u2/d/daleihao/model/data/TOP_PFT/surface_data_no_soil_variation/${type}/
+export domainFile=domain_grid${grid}_1km_c210326.nc
+export surfdataFile=surfdata_grid${grid}_1km_c210326.nc
+export topdataFile=topodata_grid${grid}_1km_c210326.nc
+
+# notop 
+export RES=CLM_USRDAT
+export COMPSET=ICLM45 
+export COMPILER=intel 
+export MACH=cori-knl 
+export CASE_NAME=no_soil_spinup_${type}_grid${grid}_${RES}.${COMPSET}.${COMPILER}
+cd ~/model/e3sm_top/cime/scripts 
+./create_newcase -compset ICLM45 -res ${RES} -case ${CASE_NAME} -compiler ${COMPILER} -mach ${MACH} -project m3520 
+cd ${CASE_NAME}
+./xmlchange LND_DOMAIN_FILE=${domainFile} 
+./xmlchange ATM_DOMAIN_FILE=${domainFile} 
+./xmlchange LND_DOMAIN_PATH=${domainPath}
+./xmlchange ATM_DOMAIN_PATH=${domainPath}
+
+./xmlchange NTASKS=128,STOP_N=10,STOP_OPTION=nyears,JOB_WALLCLOCK_TIME="15:00:00",RUN_STARTDATE="1980-01-01",REST_N=1,REST_OPTION=nyears,RESUBMIT=1
+./xmlchange DATM_MODE="CLMGSWP3v1",DATM_CLMNCEP_YR_START='1980',DATM_CLMNCEP_YR_END='2010'
+
+cat >> user_nl_clm << EOF
+hist_empty_htapes = .true.
+hist_fincl1 = 'COSZEN', 'ALBD', 'ALBI','FSA','FSR','FSDSND','FSDSNI','FSRND','FSRNI','FSDSVD','FSDSVI','FSRVD','FSRVI','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA'
+hist_nhtfrq = 0
+hist_mfilt  = 12
+fsurdat = '${domainPath}${surfdataFile}'
+rad_3d_topo = .false.
+f3dtopo = ''
+EOF
+
+cat >> user_nl_datm << EOF
+ mapalgo = "nn", "nn", "nn", "nn", "nn"
+EOF
+
+./case.setup 
+
+# change forcing data
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.Solar  user_datm.streams.txt.CLMGSWP3v1.Solar
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.Solar
+old="/Solar"
+new="/Solar3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.Solar
+
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.TPQW  user_datm.streams.txt.CLMGSWP3v1.TPQW
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.TPQW
+old="/TPHWL"
+new="/TPHWL3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.TPQW
+
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.Precip  user_datm.streams.txt.CLMGSWP3v1.Precip
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.Precip
+old="/Precip"
+new="/Precip3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.Precip
+
+
+./case.build 
+./case.submit
+
+
+done;
+done;
+
+
+
+## no soil no LAI
+
+for grid in 2;
+do
+for type in "topunit";
+do 
+export domainPath=/global/u2/d/daleihao/model/data/TOP_PFT/surface_data_no_soil_LAI_variation/${type}/
+export domainFile=domain_Topunit_grid_${grid}_c210326.nc
+export surfdataFile=surfdata_Topunit_grid_${grid}_c210326.nc
+export topdataFile=topodata_Topunit_grid_${grid}_c210326.nc
+
+# notop
+export RES=CLM_USRDAT
+export COMPSET=ICLM45 
+export COMPILER=intel 
+export MACH=cori-knl 
+export CASE_NAME=test4_no_soil_LAI_spinup_${type}_grid${grid}_${RES}.${COMPSET}.${COMPILER}
+cd ~/model/e3sm_top/cime/scripts 
+./create_newcase -compset ICLM45 -res ${RES} -case ${CASE_NAME} -compiler ${COMPILER} -mach ${MACH} -project m3520 
+cd ${CASE_NAME}
+./xmlchange LND_DOMAIN_FILE=${domainFile} 
+./xmlchange ATM_DOMAIN_FILE=${domainFile} 
+./xmlchange LND_DOMAIN_PATH=${domainPath}
+./xmlchange ATM_DOMAIN_PATH=${domainPath}
+
+./xmlchange NTASKS=11,STOP_N=10,STOP_OPTION=nyears,JOB_WALLCLOCK_TIME="02:00:00",RUN_STARTDATE="1980-01-01",REST_N=1,REST_OPTION=nyears,RESUBMIT=1
+./xmlchange DATM_MODE="CLMGSWP3v1",DATM_CLMNCEP_YR_START='1980',DATM_CLMNCEP_YR_END='2010'
+
+
+cat >> user_nl_clm << EOF
+hist_empty_htapes = .true.
+hist_fincl1 = 'COSZEN', 'ALBD', 'ALBI','FSA','FSR','FSDSND','FSDSNI','FSRND','FSRNI','FSDSVD','FSDSVI','FSRVD','FSRVI','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA'
+hist_nhtfrq = 0
+hist_mfilt  = 12
+fsurdat = '${domainPath}${surfdataFile}'
+rad_3d_topo = .false.
+f3dtopo = ''
+EOF
+
+cat >> user_nl_datm << EOF
+ mapalgo = "nn", "nn", "nn", "nn", "nn"
+EOF
+./case.setup 
+
+# change forcing data
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.Solar  user_datm.streams.txt.CLMGSWP3v1.Solar
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.Solar
+old="/Solar"
+new="/Solar3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.Solar
+
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.TPQW  user_datm.streams.txt.CLMGSWP3v1.TPQW
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.TPQW
+old="/TPHWL"
+new="/TPHWL3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.TPQW
+
+cp CaseDocs/datm.streams.txt.CLMGSWP3v1.Precip  user_datm.streams.txt.CLMGSWP3v1.Precip
+chmod u+w user_datm.streams.txt.CLMGSWP3v1.Precip
+old="/Precip"
+new="/Precip3Hrly"
+sed -i "s|$old|$new|g" user_datm.streams.txt.CLMGSWP3v1.Precip
+
+
+./case.build 
+./case.submit
+
+done;
+done;
+

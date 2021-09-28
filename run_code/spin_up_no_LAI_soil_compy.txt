@@ -1,0 +1,159 @@
+
+
+## no soil no LAI
+
+for grid in 1;
+do
+for type in "topunit";
+do 
+export domainPath=/qfs/people/haod776/data/PFT_TOP/surface_data_no_soil_LAI_variation/${type}/
+export domainFile=domain_Topunit_grid_${grid}_c210326.nc
+export surfdataFile=surfdata_Topunit_grid_${grid}_c210326.nc
+export topdataFile=topodata_Topunit_grid_${grid}_c210326.nc
+
+# notop
+export RES=CLM_USRDAT
+export COMPSET=ICLM45 
+export COMPILER=intel 
+export MACH=compy 
+export CASE_NAME=evalaute_no_soil_LAI_spinup_${type}_grid${grid}_${RES}.${COMPSET}.${COMPILER}
+cd ~/e3sm_top_v1/e3sm_top/cime/scripts 
+./create_newcase -compset ICLM45 -res ${RES} -case ${CASE_NAME} -compiler ${COMPILER} -mach ${MACH} -project ESMD 
+cd ${CASE_NAME}
+./xmlchange LND_DOMAIN_FILE=${domainFile} 
+./xmlchange ATM_DOMAIN_FILE=${domainFile} 
+./xmlchange LND_DOMAIN_PATH=${domainPath}
+./xmlchange ATM_DOMAIN_PATH=${domainPath}
+
+./xmlchange NTASKS=11,STOP_N=21,STOP_OPTION=nyears,JOB_WALLCLOCK_TIME="04:30:00",RUN_STARTDATE="1980-01-01",REST_N=1,REST_OPTION=nyears,RESUBMIT=0
+./xmlchange DATM_MODE="CLMGSWP3v1",DATM_CLMNCEP_YR_START='1980',DATM_CLMNCEP_YR_END='2010'
+
+
+cat >> user_nl_clm << EOF
+hist_empty_htapes = .true.
+hist_fincl1 = 'COSZEN', 'ALBD', 'ALBI','FSA','FSR','FSDSND','FSDSNI','FSRND','FSRNI','FSDSVD','FSDSVI','FSRVD','FSRVI','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA'
+hist_nhtfrq = 0
+hist_mfilt  = 12
+fsurdat = '${domainPath}${surfdataFile}'
+rad_3d_topo = .false.
+f3dtopo = ''
+EOF
+
+cat >> user_nl_datm << EOF
+ mapalgo = "nn", "nn", "nn", "nn", "nn"
+EOF
+./case.setup 
+./case.build 
+./case.submit
+
+done;
+done;
+
+
+#################################################
+############ no soil
+
+for grid in 1;
+do
+for type in "topunit";
+do 
+export domainPath=/qfs/people/haod776/data/PFT_TOP/surface_data_no_soil_LAI_variation/${type}/
+export domainFile=domain_Topunit_grid_${grid}_c210326.nc
+export surfdataFile=surfdata_Topunit_grid_${grid}_c210326.nc
+export topdataFile=topodata_Topunit_grid_${grid}_c210326.nc
+export finidatPath=/compyfs/haod776/e3sm_scratch/evalaute_no_soil_LAI_spinup_topunit_grid${grid}_CLM_USRDAT.ICLM45.intel/run/
+export finidatFile=evalaute_no_soil_LAI_spinup_topunit_grid${grid}_CLM_USRDAT.ICLM45.intel.clm2.r.2000-01-01-00000.nc
+
+# notop
+export RES=CLM_USRDAT
+export COMPSET=ICLM45 
+export COMPILER=intel 
+export MACH=compy 
+export CASE_NAME=no_soil_LAI_elm_plevel_notop_11years_${type}_grid${grid}_${RES}.${COMPSET}.${COMPILER}
+cd ~/e3sm_top_v1/e3sm_top/cime/scripts 
+./create_newcase -compset ICLM45 -res ${RES} -case ${CASE_NAME} -compiler ${COMPILER} -mach ${MACH} -project ESMD 
+cd ${CASE_NAME}
+./xmlchange LND_DOMAIN_FILE=${domainFile} 
+./xmlchange ATM_DOMAIN_FILE=${domainFile} 
+./xmlchange LND_DOMAIN_PATH=${domainPath}
+./xmlchange ATM_DOMAIN_PATH=${domainPath}
+
+./xmlchange NTASKS=11,STOP_N=11,STOP_OPTION=nyears,JOB_WALLCLOCK_TIME="06:00:00",RUN_STARTDATE="2000-01-01",REST_N=10,REST_OPTION=nyears
+./xmlchange DATM_MODE="CLMGSWP3v1",DATM_CLMNCEP_YR_START='2000',DATM_CLMNCEP_YR_END='2010'
+
+
+cat >> user_nl_clm << EOF
+hist_empty_htapes = .true.
+hist_fincl1 = 'COSZEN', 'ALBD', 'ALBI','FSA','FSR','FSDSND','FSDSNI','FSRND','FSRNI','FSDSVD','FSDSVI','FSRVD','FSRVI','FIRE','FSDS','FIRA','FLDS','FGR','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA','PSurf'
+hist_fincl2 = 'FSA','FSDS','FSR','FIRA','FIRE','FLDS','FGR','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA','PSurf'
+hist_fincl3 = 'FSA','FSDS','FSR','FIRA','FIRE','FLDS','FGR','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA','PSurf'
+hist_fincl4 = 'COSZEN', 'ALBD', 'ALBI','FSA','FSR','FSDSND','FSDSNI','FSRND','FSRNI','FSDSVD','FSDSVI','FSRVD','FSRVI','FIRE','FSDS','FIRA','FLDS','FGR','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA','PSurf'
+hist_fincl5 = 'FSA','FSDS','FSR','FIRA','FIRE','FLDS','FGR','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA','PSurf'
+hist_fincl6 = 'FSA','FSDS','FSR','FIRA','FIRE','FLDS','FGR','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA','PSurf'
+hist_nhtfrq = 1, -24, 0, 1, -24, 0
+hist_mfilt  = 48, 1, 12, 48, 1, 12
+hist_dov2xy = .false., .false., .false., .true., .true., .true.
+hist_type1d_pertape = ' ', ' ', ' ', ' ', ' ', ' '
+
+fsurdat = '${domainPath}${surfdataFile}'
+rad_3d_topo = .false.
+f3dtopo = ''
+finidat = '${finidatPath}${finidatFile}'
+EOF
+
+cat >> user_nl_datm << EOF
+ mapalgo = "nn", "nn", "nn", "nn", "nn"
+EOF
+
+
+./case.setup
+./case.build 
+./case.submit
+
+
+# top
+export RES=CLM_USRDAT
+export COMPSET=ICLM45 
+export COMPILER=intel 
+export MACH=compy 
+export CASE_NAME=no_soil_LAI_elm_plevel_top_11years_${type}_grid${grid}_${RES}.${COMPSET}.${COMPILER}
+cd ~/e3sm_top_v1/e3sm_top/cime/scripts 
+./create_newcase -compset ICLM45 -res ${RES} -case ${CASE_NAME} -compiler ${COMPILER} -mach ${MACH} -project ESMD 
+cd ${CASE_NAME}
+./xmlchange LND_DOMAIN_FILE=${domainFile} 
+./xmlchange ATM_DOMAIN_FILE=${domainFile} 
+./xmlchange LND_DOMAIN_PATH=${domainPath} 
+./xmlchange ATM_DOMAIN_PATH=${domainPath}
+
+./xmlchange NTASKS=11,STOP_N=11,STOP_OPTION=nyears,JOB_WALLCLOCK_TIME="06:00:00",RUN_STARTDATE="2000-01-01",REST_N=10,REST_OPTION=nyears
+./xmlchange DATM_MODE="CLMGSWP3v1",DATM_CLMNCEP_YR_START='2000',DATM_CLMNCEP_YR_END='2010'
+
+cat >> user_nl_clm << EOF
+hist_empty_htapes = .true.
+hist_fincl1 = 'COSZEN', 'ALBD', 'ALBI','FSA','FSR','FSDSND','FSDSNI','FSRND','FSRNI','FSDSVD','FSDSVI','FSRVD','FSRVI','FIRE','FSDS','FIRA','FLDS','FGR','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA','PSurf'
+hist_fincl2 = 'FSA','FSDS','FSR','FIRA','FIRE','FLDS','FGR','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA','PSurf'
+hist_fincl3 = 'FSA','FSDS','FSR','FIRA','FIRE','FLDS','FGR','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA','PSurf'
+hist_fincl4 = 'COSZEN', 'ALBD', 'ALBI','FSA','FSR','FSDSND','FSDSNI','FSRND','FSRNI','FSDSVD','FSDSVI','FSRVD','FSRVI','FIRE','FSDS','FIRA','FLDS','FGR','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA','PSurf'
+hist_fincl5 = 'FSA','FSDS','FSR','FIRA','FIRE','FLDS','FGR','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA','PSurf'
+hist_fincl6 = 'FSA','FSDS','FSR','FIRA','FIRE','FLDS','FGR','FSH','EFLX_LH_TOT','TSOI_10CM','TV','TG','TSA','QSNOMELT','QRUNOFF','QOVER','PSNSUN','PSNSHA','FPSN','FSNO','SNOWDP','H2OSNO','zeta_patch','ustar_patch','LH_pft', 'SH_pft','TBOT','QBOT','RHO','EFLX_LH_TOT','Qh','FV','Q2M','TSA','PSurf'
+hist_nhtfrq = 1, -24, 0, 1, -24, 0
+hist_mfilt  = 48, 1, 12, 48, 1, 12
+hist_dov2xy = .false., .false., .false., .true., .true., .true.
+hist_type1d_pertape = ' ', ' ', ' ', ' ', ' ', ' '
+
+fsurdat = '${domainPath}${surfdataFile}'
+rad_3d_topo = .true.
+f3dtopo = '${domainPath}${topdataFile}'
+finidat = '${finidatPath}${finidatFile}'
+EOF
+
+cat >> user_nl_datm << EOF
+ mapalgo = "nn", "nn", "nn", "nn", "nn"
+EOF
+
+./case.setup 
+./case.build 
+./case.submit
+
+done;
+done;

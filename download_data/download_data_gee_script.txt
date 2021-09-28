@@ -1,0 +1,250 @@
+
+var regions =
+ee.Geometry.Polygon(
+[[[119.5, 39],
+    [119.5, 38],
+    [120.5, 38],
+    [120.5, 39]]], null, false);
+
+
+////  Top
+var elevation = ee.Image('CGIAR/SRTM90_V4').toDouble();
+var terrain = ee.Algorithms.Terrain(elevation);
+var slope = terrain.select('slope').toDouble();
+var aspect = terrain.select('aspect').toDouble();
+
+var terrainPars = ee.Image.cat([elevation, slope, aspect]);
+
+
+Export.image.toDrive({
+  image: terrainPars.select('elevation',  'slope','aspect'),
+  description: 'ROI_Top_30',
+  scale:  30,
+  folder: 'Data_Top_&_PFT',
+  fileFormat: 'GeoTIFF',
+  maxPixels:1e12,
+  region: regions,
+  crs: 'EPSG:4326'
+});
+
+Export.image.toDrive({
+  image: terrainPars.select('elevation',  'slope','aspect'),
+  description: 'ROI_Top_500',
+  scale:  500,
+  folder: 'Data_Top_&_PFT',
+  fileFormat: 'GeoTIFF',
+  maxPixels:1e12,
+  region: regions,
+  crs: 'EPSG:4326'
+});
+
+///land cover
+
+for(var year = 2000; year<2016; year = year + 1) {  
+
+    var LCs =ee.ImageCollection("MODIS/006/MCD12Q1")
+                      .filter(ee.Filter.calendarRange(year,year,'year'))
+                      .filterBounds(regions);
+        
+
+  
+ var LCs = LCs.first().select('LC_Type1')
+// print(LCs)
+//  Map.addLayer(fpardata.first().select('Fpar'))     
+Export.image.toDrive({
+  image: LCs,
+  description: 'ROI_LC_' + year.toString(),
+  scale:  500,
+  folder: 'Data_Top_&_PFT',
+  fileFormat: 'GeoTIFF',
+  maxPixels:1e13,
+  region: regions,
+  crs: 'EPSG:4326'
+});
+}
+
+////////////////// albedo
+
+ var maskQA = function(img) {
+   //Select the QA band.
+
+ var bitMask = 1; // select good quality
+   var QA = img.select('BRDF_Albedo_Band_Mandatory_Quality_shortwave')
+ img.updateMask(QA.bitwiseAnd(bitMask).eq(0))
+ var QA = img.select('BRDF_Albedo_Band_Mandatory_Quality_vis')
+ img.updateMask(QA.bitwiseAnd(bitMask).eq(0))
+ var QA = img.select('BRDF_Albedo_Band_Mandatory_Quality_nir')
+ img.updateMask(QA.bitwiseAnd(bitMask).eq(0))
+ 
+  return img;
+} 
+
+var albedoData = ee.ImageCollection("MODIS/006/MCD43A3").filterDate('2000-01-01','2016-01-01');
+albedoData = albedoData.map(maskQA);
+
+for(var year = 2000; year<2016; year = year + 1) {
+    for (var month = 1; month <= 12; month = month + 1)  {
+        
+        var img =  albedoData.filter(ee.Filter.calendarRange(year,year,'year'))
+        .filter(ee.Filter.calendarRange(month, month, 'month'));
+ var Albedo = img.select('Albedo_BSA_shortwave', 'Albedo_WSA_shortwave', 'Albedo_BSA_vis', 'Albedo_WSA_vis', 'Albedo_BSA_nir', 'Albedo_WSA_nir')
+
+ Albedo = Albedo.mean()
+ 
+Export.image.toDrive({
+  image: Albedo.select('Albedo_BSA_shortwave',  'Albedo_WSA_shortwave','Albedo_BSA_vis', 'Albedo_WSA_vis', 'Albedo_BSA_nir', 'Albedo_WSA_nir'),
+  description: 'ROI_Albedo_' + year.toString() + '_' + month.toString(),
+  scale: 500,
+  folder: 'Data_Top_&_PFT',
+  fileFormat: 'GeoTIFF',
+  maxPixels:1e10,
+  region: regions,
+  crs: 'EPSG:4326'
+});
+
+}
+}
+
+/////////// Snow data
+var maskQA = function(img) {
+
+ var QA = img.select('NDSI_Snow_Cover_Basic_QA')
+ img.updateMask(QA.lt(3))
+ 
+  return img;
+} 
+
+ var SnowData = ee.ImageCollection("MODIS/006/MOD10A1").filterDate('2000-01-01','2016-01-01');        
+ SnowData = SnowData.map(maskQA);
+ 
+ for(var year = 2000; year<2016; year = year + 1) {
+    for (var month = 1; month <= 12; month = month + 1)  {
+        
+        var img =  SnowData.filter(ee.Filter.calendarRange(year,year,'year'))
+        .filter(ee.Filter.calendarRange(month, month, 'month'));	  
+ var Snow = img.select('NDSI_Snow_Cover')
+ 
+ Snow = Snow.mean()
+  
+Export.image.toDrive({
+  image: Snow.select('NDSI_Snow_Cover'),
+  description: 'ROI_SnowCover_' + year.toString() + '_' + month.toString(),
+  scale: 500,
+  folder: 'Data_Top_&_PFT',
+  fileFormat: 'GeoTIFF',
+  maxPixels:1e10,
+  region: regions,
+  crs: 'EPSG:4326'
+});
+}
+}
+
+///  Temp
+var maskQA = function(img) {
+   //Select the QA band.
+
+    var bitMask = 1; // select good quality
+   var QA = img.select('QC_Day')
+ img.updateMask(QA.bitwiseAnd(bitMask).eq(0))
+ var QA = img.select('QC_Night')
+ img.updateMask(QA.bitwiseAnd(bitMask).eq(0))
+ 
+  return img;
+} 
+
+ var tempData = ee.ImageCollection("MODIS/006/MOD11A1").filterDate('2000-01-01','2016-01-01');
+tempData = tempData.map(maskQA)
+
+  for(var year = 2000; year<2016; year = year + 1) {
+    for (var month = 1; month <= 12; month = month + 1)  {
+        
+        var img =  tempData.filter(ee.Filter.calendarRange(year,year,'year'))
+        .filter(ee.Filter.calendarRange(month, month, 'month'));
+      
+ var Temp = img.select('LST_Day_1km', 'Day_view_time', 'LST_Night_1km', 'Night_view_time')
+ 
+   Temp = Temp.mean()
+   
+Export.image.toDrive({
+  image: Temp.select('LST_Day_1km', 'Day_view_time', 'LST_Night_1km', 'Night_view_time').toUint16(),
+  description: 'ROI_Temperature_' + year.toString() + '_' + month.toString(),
+  scale: 500,
+  folder: 'Data_Top_&_PFT',
+  fileFormat: 'GeoTIFF',
+  maxPixels:1e10,
+  region: regions,
+  crs: 'EPSG:4326'
+});
+}
+}
+
+
+/// download ET
+var maskQA = function(img) {
+   //Select the QA band.
+
+ var bitMask = 1; // select good quality
+  var QA = img.select('ET_QC')
+ img.updateMask(QA.bitwiseAnd(bitMask).eq(0))
+ 
+  return img;
+} 
+
+ var ETData = ee.ImageCollection("MODIS/006/MOD16A2").filterDate('2000-01-01','2016-01-01');
+ ETData = ETData.map(maskQA)  
+ 
+     for(var year = 2000; year<2016; year = year + 1) {
+    for (var month = 1; month <= 12; month = month + 1)  {
+        
+        var img =  ETData.filter(ee.Filter.calendarRange(year,year,'year'))
+        .filter(ee.Filter.calendarRange(month, month, 'month'));
+ var ET = img.select('ET','LE','PET','PLE');
+
+  ET = ET.mean() 
+Export.image.toDrive({
+  image: ET.select('ET','LE','PET','PLE'),
+  description: 'ROI_ET_' + year.toString() + '_' + month.toString(),
+  scale: 500,
+  folder: 'Data_Top_&_PFT',
+  fileFormat: 'GeoTIFF',
+  maxPixels:1e10,
+  region: regions,
+  crs: 'EPSG:4326'
+});
+}
+}
+
+////  EVI
+ var maskQA = function(image) {
+   //Select the QA band.
+
+var bitMask = 1; // select good quality
+ var QA = image.select('DetailedQA')
+ image.updateMask(QA.bitwiseAnd(bitMask).eq(0))   
+
+  return image;
+} 
+
+ var EVIData = ee.ImageCollection("MODIS/006/MOD13A2").filterDate('2000-01-01','2016-01-01');
+  EVIData = EVIData.map(maskQA)      
+  
+     for(var year = 2000; year<2016; year = year + 1) {
+    for (var month = 1; month <= 12; month = month + 1)  {
+        
+        var img =  EVIData.filter(ee.Filter.calendarRange(year,year,'year'))
+        .filter(ee.Filter.calendarRange(month, month, 'month'));
+ var EVI = img.select('EVI');
+
+    EVI = EVI.mean()
+Export.image.toDrive({
+  image: EVI.select('EVI'),
+  description: 'ROI_EVI_' + year.toString() + '_' + month.toString(),
+  scale: 500,
+  folder: 'Data_Top_&_PFT',
+  fileFormat: 'GeoTIFF',
+  maxPixels:1e10,
+  region: regions,
+  crs: 'EPSG:4326'
+});
+}
+}
